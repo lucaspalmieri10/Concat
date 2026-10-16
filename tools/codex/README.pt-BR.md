@@ -59,6 +59,10 @@ Para inserir as legendas na timeline, leia os segmentos do JSON (`offsets` em mi
 O MCP portátil recebe `CONCAT_HOME`, `CONCAT_EXE` e `CONCAT_SETTINGS_PATH`. `CONCAT_AI_RUNTIME` e `CONCAT_MODELS_DIR` permitem caminhos alternativos em testes. O token continua apenas no arquivo local de preferências. O servidor portátil usa `127.0.0.1:7421`, separado da instalação inicial na porta 7420.
 O Acesso Controlado a Pastas requer autorização específica para o Concat, a ponte de voz, Whisper e FFmpeg gravarem em Documentos. A proteção do Windows pode permanecer ativa.
 
+O executável e as DLLs do Concat permanecem os oficiais da versão 0.2.7. Os motores auxiliares de voz e transcrição ficam isolados em `Ferramentas`.
+
+**Limite observado nos testes deste PC:** a narração, a transcrição e a exportação com legendas passaram. O recorte de pessoas e objetos também produziu arquivos, mas sequências de análises de recorte encerraram o Concat com uma falha nativa `0xc0000005`. A troca experimental do ONNX Runtime não eliminou a falha, e foi revertida. Portanto os modelos de recorte estão instalados, mas o recorte nativo ainda não deve ser considerado estável para processamento em lote. Salve o projeto antes do recorte. SlimSAM e RealESR foram conferidos por hash; suas interfaces de seleção/melhoria ainda não foram validadas neste PC.
+
 ## Instalação reproduzível
 
 Requisitos: Windows x64, Node.js 22 ou superior, PowerShell 7 e Codex instalado.
