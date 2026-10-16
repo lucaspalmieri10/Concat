@@ -32,10 +32,11 @@ Não existe edição colaborativa simultânea da mesma timeline nesta configura�
 | `concat_preview` | Ver um frame PNG no Codex |
 | `concat_export` | Exportar MP4 e acompanhar o resultado inicial |
 | `concat_events` | Consultar progresso/conclusão da exportação |
-| `concat_ai_status` | Conferir os motores e modelos de voz e legendas |
+| `concat_ai_status` | Conferir os motores e modelos de voz, legendas e recorte |
 | `concat_narrate` | Gerar narração local PT-BR com Dora, Alex, Santa ou Jeff |
 | `concat_transcribe` | Gerar legendas SRT, texto e tempos a partir de vídeo/áudio |
-| `concat_ai_job` | Acompanhar a tarefa de narração ou transcrição |
+| `concat_remove_background` | Gerar PNG ou MOV transparente em um processo local separado |
+| `concat_ai_job` | Acompanhar a tarefa de narração, transcrição ou recorte |
 
 Uma exportação só terminou quando retornar `export.done`. `export.pending` exige consultar eventos.
 A ponte recusa sobrescrever uma exportação existente. Após erro de conexão ou timeout, confira o documento antes de repetir uma edição: uma resposta perdida não prova que a operação falhou.
@@ -54,14 +55,22 @@ O painel de voz do Concat 0.2.7 oferece as vozes inglesas/chinesas selecionadas 
 `concat_transcribe` usa FFmpeg para preparar o áudio e Whisper para escrever SRT/JSON/TXT. O idioma padrão é português; a fala é transcrita, sem tradução. A revisão de nomes, números e sincronização continua fazendo parte da edição.
 As tarefas são assíncronas: aguarde `concat_ai_job` retornar **completed** antes de importar a saída. IDs valem somente enquanto esse servidor MCP estiver ativo; se ele reiniciar, confira os arquivos existentes antes de repetir. A transcrição conserva o WAV mono 16 kHz para conferência. A pasta de saída deve existir.
 
-Para inserir as legendas na timeline, leia os segmentos do JSON (`offsets` em milissegundos), crie `addTextClip` com `start`, `duration`, `above: true`, estilo legível e texto revisado, então execute `project.save`. Para recorte, use `setClipCutout` com `cutout: {mode: "auto", subject: "person"}` ou `subject: "object"`; a exportação do Concat analisa as máscaras com os modelos instalados.
+Para inserir as legendas na timeline, leia os segmentos do JSON (`offsets` em milissegundos), crie `addTextClip` com `start`, `duration`, `above: true`, estilo legível e texto revisado, então execute `project.save`.
+
+### Remoção de fundo pelo Codex
+
+Use `concat_remove_background` com `input`, `output` e `subject: "person"` ou `"object"`. A saída deve ser um PNG para imagem ou MOV para vídeo. Aguarde `concat_ai_job` retornar `completed`, importe o arquivo resultante e coloque-o numa faixa acima do novo fundo. O MOV usa QuickTime Animation com canal alfa e mantém a primeira faixa de áudio. É um material intermediário para edição; o MP4 final é exportado depois de compor o fundo no Concat.
+
+O RVM detecta pessoas (incluindo outras pessoas visíveis no fundo); ISNet procura o assunto principal da imagem. A qualidade depende do material e deve ser revisada. O recorte de vídeo preserva o estado temporal do RVM. O motor roda em CPU: objetos custam mais tempo que pessoas. Por padrão, o vídeo tem lado maior de até 1280 pixels e até 30 fps; `maxEdge` (64 a 4096) e `fps` (1 a 60) permitem escolher outra saída. `start` e `duration`, em segundos, selecionam um trecho. Não há corte automático de duração: uma tarefa que passar de 28 minutos de processamento falha e pede um trecho menor. Uma falha pode deixar uma saída parcial, que não deve ser importada como concluída.
+
+O worker `background.py` roda em `Ferramentas/background/python.exe`, com ONNX Runtime CPU 1.23.2, NumPy e Pillow isolados. Os arquivos só são gravados pelo FFmpeg já autorizado para a pasta CAPCUT. O Python auxiliar não precisa de uma exceção no Defender. `background-runtime.lock.json` registra as versões e hashes dos pacotes e os binários do runtime local. Os modelos são os mesmos RVM/ISNet verificados em `ai-assets.lock.json`.
 
 O MCP portátil recebe `CONCAT_HOME`, `CONCAT_EXE` e `CONCAT_SETTINGS_PATH`. `CONCAT_AI_RUNTIME` e `CONCAT_MODELS_DIR` permitem caminhos alternativos em testes. O token continua apenas no arquivo local de preferências. O servidor portátil usa `127.0.0.1:7421`, separado da instalação inicial na porta 7420.
 O Acesso Controlado a Pastas requer autorização específica para o Concat, a ponte de voz, Whisper e FFmpeg gravarem em Documentos. A proteção do Windows pode permanecer ativa.
 
-O executável e as DLLs do Concat permanecem os oficiais da versão 0.2.7. Os motores auxiliares de voz e transcrição ficam isolados em `Ferramentas`.
+O executável e as DLLs do Concat permanecem os oficiais da versão 0.2.7. Os motores auxiliares de voz, transcrição e recorte ficam isolados em `Ferramentas`.
 
-**Limite observado nos testes deste PC:** a narração, a transcrição e a exportação com legendas passaram. O recorte de pessoas e objetos também produziu arquivos, mas sequências de análises de recorte encerraram o Concat com uma falha nativa `0xc0000005`. A troca experimental do ONNX Runtime não eliminou a falha, e foi revertida. Portanto os modelos de recorte estão instalados, mas o recorte nativo ainda não deve ser considerado estável para processamento em lote. Salve o projeto antes do recorte. SlimSAM e RealESR foram conferidos por hash; suas interfaces de seleção/melhoria ainda não foram validadas neste PC.
+**Resultado e limite observado neste PC:** narração, transcrição, exportação com legendas e o recorte pelo worker separado passaram em testes locais. Foram verificadas imagens em sequência com RVM/ISNet, um trecho de vídeo com canal alfa e áudio, e sua composição/exportação no Concat. Isso não substitui a revisão visual dos vídeos reais. O recorte nativo (`setClipCutout` ou o painel interno do editor) apresentou uma falha `0xc0000005` em análises consecutivas. A troca experimental do ONNX Runtime do editor não eliminou a falha, e foi revertida. Use `concat_remove_background` para o fluxo automatizado; essa alternativa não corrige o defeito interno do Concat. SlimSAM e RealESR foram conferidos por hash; suas interfaces de seleção/melhoria ainda não foram validadas neste PC.
 
 ## Instalação reproduzível
 

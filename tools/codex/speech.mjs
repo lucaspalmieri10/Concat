@@ -15,15 +15,18 @@ const whisper = join(runtime, 'whisper', 'Release', 'whisper-cli.exe');
 const ffmpeg = join(runtime, 'ffmpeg', 'ffmpeg-n8.1-latest-win64-lgpl-shared-8.1', 'bin', 'ffmpeg.exe');
 const voice = join(runtime, 'vits-piper-pt_BR-jeff-medium');
 const kokoro = join(models, 'tts-models', 'kokoro-int8-multi-lang-v1_0');
+const backgroundPython = process.env.CONCAT_BACKGROUND_PYTHON || join(runtime, 'background', 'python.exe');
+const backgroundScript = join(repo, 'tools', 'codex', 'background.py');
 const jobs = new Map();
 const reservations = new Set();
 const done = new Set(['completed', 'failed']);
 
 export const speechTools = [
-  { name: 'concat_ai_status', description: 'Confere se os motores locais e modelos de voz PT-BR e legendas estão instalados.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true } },
+  { name: 'concat_ai_status', description: 'Confere os motores locais e modelos de voz PT-BR, legendas e remoção de fundo.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true } },
   { name: 'concat_narrate', description: 'Gera WAV com voz local em português brasileiro. Voz padrão Dora; alternativas Alex, Santa e Jeff. Não usa serviços pagos. Inicia tarefa; consulte concat_ai_job até completed. output deve ser caminho absoluto .wav novo em pasta existente. Texto até 4000 caracteres.', inputSchema: { type: 'object', properties: { text: { type: 'string', minLength: 1, maxLength: 4000 }, output: { type: 'string' }, voice: { type: 'string', enum: ['dora','alex','santa','jeff'] }, speed: { type: 'number', minimum: 0.5, maximum: 2 } }, required: ['text', 'output'], additionalProperties: false }, annotations: { destructiveHint: false, openWorldHint: false } },
   { name: 'concat_transcribe', description: 'Transcreve vídeo/áudio local com Whisper multilíngue e cria SRT, JSON e TXT. Inicia tarefa; consulte concat_ai_job. outputPrefix é caminho absoluto novo sem extensão em pasta existente. small tem melhor qualidade; base é mais rápido. Mantém áudio mono 16 kHz ao lado para conferência.', inputSchema: { type: 'object', properties: { input: { type: 'string' }, outputPrefix: { type: 'string' }, model: { type: 'string', enum: ['small', 'base'] }, language: { type: 'string', enum: ['pt','en','es','auto'] } }, required: ['input','outputPrefix'], additionalProperties: false }, annotations: { destructiveHint: false, openWorldHint: false } },
-  { name: 'concat_ai_job', description: 'Consulta uma tarefa de voz/legenda desta conexão MCP. completed confirma arquivos verificados; failed contém motivo. IDs não persistem após reiniciar o MCP; os arquivos permanecem.', inputSchema: { type: 'object', properties: { job: { type: 'string' } }, required: ['job'], additionalProperties: false }, annotations: { readOnlyHint: true } }
+  { name: 'concat_remove_background', description: 'Remove fundo localmente em processo separado do editor. Para imagem, gera PNG transparente; para vídeo, gera MOV com canal alfa e preserva o primeiro áudio. person usa RVM; object usa ISNet (mais lento). O MOV pode ser importado no Concat sobre outro fundo. Inicia tarefa; aguarde concat_ai_job completed. Saída nova em pasta existente. Vídeo: lado maior até 1280 por padrão, fps da origem limitado a 30; maxEdge/fps permitem ajustar. start/duration selecionam trecho. CPU: clipes longos podem demorar; limite de 28 minutos por tarefa. Não substitui seleção manual SlimSAM.', inputSchema: { type: 'object', properties: { input: { type: 'string' }, output: { type: 'string' }, subject: { type: 'string', enum: ['person','object'] }, maxEdge: { type: 'integer', minimum: 64, maximum: 4096 }, fps: { type: 'number', minimum: 1, maximum: 60 }, start: { type: 'number', minimum: 0 }, duration: { type: 'number', exclusiveMinimum: 0 } }, required: ['input','output'], additionalProperties: false }, annotations: { destructiveHint: false, openWorldHint: false } },
+  { name: 'concat_ai_job', description: 'Consulta uma tarefa de voz, legenda ou remoção de fundo desta conexão MCP. completed confirma arquivos verificados; failed contém motivo. IDs não persistem após reiniciar o MCP; os arquivos permanecem.', inputSchema: { type: 'object', properties: { job: { type: 'string' } }, required: ['job'], additionalProperties: false }, annotations: { readOnlyHint: true } }
 ];
 
 async function exists(path) {
@@ -55,14 +58,14 @@ async function run(exe, args, input) {
   return new Promise((resolveRun, reject) => {
     const child = spawn(exe, args, { windowsHide: true, stdio: [input === undefined ? 'ignore' : 'pipe','pipe','pipe'], shell: false });
     if (input !== undefined) { child.stdin.on('error', () => {}); child.stdin.end(input, 'utf8'); }
-    let log = '';
+    let log = '', stdout = '';
     const append = chunk => { log = (log + chunk.toString('utf8')).slice(-16000); };
-    child.stdout.on('data', append); child.stderr.on('data', append);
+    child.stdout.on('data', chunk => { stdout = (stdout + chunk.toString('utf8')).slice(-1000000); append(chunk); }); child.stderr.on('data', append);
     const timer = setTimeout(() => { child.kill(); }, 30 * 60 * 1000);
     child.once('error', error => { clearTimeout(timer); reject(error); });
     child.once('close', (code, signal) => {
       clearTimeout(timer);
-      if (code === 0) resolveRun(log);
+      if (code === 0) resolveRun(stdout);
       else reject(new Error(`Motor local falhou (${code ?? signal}): ${log.slice(-6000)}`));
     });
   });
@@ -86,7 +89,7 @@ async function waveInfo(path) {
 }
 export async function speechCall(name, args = {}) {
   if (name === 'concat_ai_status') {
-    const paths = { sherpa, voiceBridge, whisper, ffmpeg, voice: join(voice,'pt_BR-jeff-medium.onnx'), kokoro:join(kokoro,'model.int8.onnx'), whisperSmall: join(models,'whisper-models','ggml-small.bin'), whisperBase: join(models,'whisper-models','ggml-base.bin') };
+    const paths = { sherpa, voiceBridge, whisper, ffmpeg, backgroundPython, backgroundScript, personModel:join(models,'cutout-models','rvm-mobilenetv3.onnx'), objectModel:join(models,'cutout-models','isnet-general-use.onnx'), voice: join(voice,'pt_BR-jeff-medium.onnx'), kokoro:join(kokoro,'model.int8.onnx'), whisperSmall: join(models,'whisper-models','ggml-small.bin'), whisperBase: join(models,'whisper-models','ggml-base.bin') };
     return { runtime, models, files: Object.fromEntries(await Promise.all(Object.entries(paths).map(async ([key,path]) => [key,{ path,installed:await exists(path) }]))) };
   }
   if (name === 'concat_ai_job') {
@@ -125,5 +128,21 @@ export async function speechCall(name, args = {}) {
       return { srt:prefix+'.srt', json:prefix+'.json', textFile:prefix+'.txt', audio:wav, model, language, transcript:(await readFile(prefix+'.txt','utf8')).slice(0,40000), segments:(result.transcription ?? []).slice(0,500) };
     }, release);
   }
-  throw new Error('Ferramenta de voz/legenda desconhecida.');
+  if (name === 'concat_remove_background') {
+    const input = await inputFile(args.input);
+    if (typeof args.output !== 'string' || !/\.(png|mov)$/i.test(args.output)) throw new Error('Use .png para foto ou .mov para vídeo com transparência.');
+    if (args.subject !== undefined && !['person','object'].includes(args.subject)) throw new Error('Assunto deve ser person ou object.');
+    for (const [key,min,max] of [['maxEdge',64,4096],['fps',1,60],['start',0,Infinity],['duration',Number.MIN_VALUE,Infinity]]) {
+      if (args[key] !== undefined && (!Number.isFinite(args[key]) || args[key] < min || args[key] > max || (key === 'maxEdge' && !Number.isInteger(args[key])))) throw new Error('Valor inválido: '+key);
+    }
+    const release = await outputs([args.output]);
+    return start('background-removal', async () => {
+      const config = { input, output:args.output, subject:args.subject ?? 'person', ffmpeg, models:join(models,'cutout-models') };
+      for (const key of ['maxEdge','fps','start','duration']) if (args[key] !== undefined) config[key] = args[key];
+      const result = JSON.parse(await run(backgroundPython, ['-B', backgroundScript], JSON.stringify(config)));
+      if ((await stat(args.output)).size === 0) throw new Error('O recorte produziu um arquivo vazio.');
+      return result;
+    }, release);
+  }
+  throw new Error('Ferramenta de IA desconhecida.');
 }
