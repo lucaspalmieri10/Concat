@@ -1,0 +1,80 @@
+[
+  {
+    "file": "ggml-small.bin",
+    "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-small.bin",
+    "size": 487601967,
+    "sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b"
+  },
+  {
+    "file": "ggml-base.bin",
+    "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base.bin",
+    "size": 147951465,
+    "sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe"
+  },
+  {
+    "file": "kokoro-int8-multi-lang-v1_0.tar.bz2",
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-int8-multi-lang-v1_0.tar.bz2",
+    "size": 132303094,
+    "sha256": "4c3052abaa60943a341f193888cf6abd68787dae6ab8ae5c925a706caa247e4e"
+  },
+  {
+    "file": "sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2",
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2",
+    "size": 98336520,
+    "sha256": "2f3b88823cbbb9bf0b2477ec8ae7b3fec417b3a87b6bb5f256dba66f2ad967cb"
+  },
+  {
+    "file": "rvm-mobilenetv3.onnx",
+    "url": "https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3_fp32.onnx",
+    "size": 14975696,
+    "sha256": "88d4531297118f595bf2fd60f6f566aec2e559393802d1f436c380f0cbbd2828"
+  },
+  {
+    "file": "isnet-general-use.onnx",
+    "url": "https://github.com/danielgatis/rembg/releases/download/v0.0.0/isnet-general-use.onnx",
+    "size": 178648008,
+    "sha256": "60920e99c45464f2ba57bee2ad08c919a52bbf852739e96947fbb4358c0d964a"
+  },
+  {
+    "file": "slimsam-77-encoder.onnx",
+    "url": "https://huggingface.co/Xenova/slimsam-77-uniform/resolve/5850ab45f587c112167512ffef949107115e26a0/onnx/vision_encoder.onnx",
+    "size": 23276014,
+    "sha256": "9f8433273a6750b587779baa0cf5508111001bf7e7acfcf585d370139fd366d0"
+  },
+  {
+    "file": "slimsam-77-decoder.onnx",
+    "url": "https://huggingface.co/Xenova/slimsam-77-uniform/resolve/5850ab45f587c112167512ffef949107115e26a0/onnx/prompt_encoder_mask_decoder.onnx",
+    "size": 16557892,
+    "sha256": "f4514391764fbd56e08e119060d874ecd7d52994bfb1968af159e12d4943b5bb"
+  },
+  {
+    "file": "realesr-general-x4v3.onnx",
+    "url": "https://huggingface.co/CoderViking/realesr-general-x4v3-onnx/resolve/c6a971706797c7502945a2b4c4274fce4900d4ab/realesr-general-x4v3.onnx",
+    "size": 4866417,
+    "sha256": "1940a93ee08283a0a7286183186357b1688fe9fa8ede74604b424586aaddf112"
+  },
+  {
+    "file": "vits-piper-pt_BR-jeff-medium.tar.bz2",
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-jeff-medium.tar.bz2",
+    "size": 67207052,
+    "sha256": "da4c870fc7b20600c74261b3e1dd1c816da2ce063e18c46e1f2cd86dea88f3f0"
+  },
+  {
+    "file": "sherpa-onnx-v1.13.8-win-x64-shared-MD-Release.tar.bz2",
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-win-x64-shared-MD-Release.tar.bz2",
+    "size": 20494724,
+    "sha256": "3e971a04b2e0ba4dfa53d381a006367ce8c9f5f09b4ae00043e9845c2baded22"
+  },
+  {
+    "file": "whisper-bin-x64.zip",
+    "url": "https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.2/whisper-bin-x64.zip",
+    "size": 8194445,
+    "sha256": "49dcc16de826f20bd53d44f947a1ae49dfa81f86cad67a64d80820cb192d674a"
+  },
+  {
+    "file": "ffmpeg-n8.1-latest-win64-lgpl-shared-8.1.zip",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-win64-lgpl-shared-8.1.zip",
+    "size": 80983242,
+    "sha256": "66bfa3595d633afadf22be4ff5385cbdae8998006e61755e01333491e595b178"
+  }
+]

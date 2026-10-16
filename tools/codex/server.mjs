@@ -7,6 +7,7 @@ import { spawn, execFile } from 'node:child_process';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { ConcatClient } from './client.mjs';
+import { speechTools, speechCall } from './speech.mjs';
 
 const reads = ['project.list', 'project.get', 'project.document', 'media.probe', 'catalogue.list', 'template.list'];
 const writes = ['project.create', 'project.open', 'project.close', 'project.save', 'project.setVideo', 'edit.apply', 'edit.undo', 'edit.redo', 'media.import', 'template.instantiate', 'template.save', 'export.cancel'];
@@ -14,6 +15,7 @@ const object = { type: 'object', additionalProperties: true };
 const empty = { type: 'object', properties: {}, additionalProperties: false };
 const rpcSchema = methods => ({ type: 'object', properties: { method: { type: 'string', enum: methods }, params: object }, required: ['method'], additionalProperties: false });
 const tools = [
+  ...speechTools,
   { name: 'concat_status', description: 'Verifica a conexão autenticada com o Concat local e informa versão e capacidades.', inputSchema: empty, annotations: { readOnlyHint: true } },
   { name: 'concat_start', description: 'Abre a janela do Concat no Windows. Use somente quando o editor estiver fechado.', inputSchema: empty },
   { name: 'concat_read', description: 'Consulta projetos, documento, mídia e efeitos. project.get/document exigem path de um projeto aberto pela API. Nunca retorna o token.', inputSchema: rpcSchema(reads), annotations: { readOnlyHint: true } },
@@ -38,6 +40,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }));
 server.setRequestHandler(CallToolRequestSchema, async request => {
   const args = request.params.arguments ?? {};
   try {
+    if (speechTools.some(tool => tool.name === request.params.name)) return asText(await speechCall(request.params.name, args));
     if (request.params.name === 'concat_start') {
       try { const active = await connected(); return asText({ alreadyRunning: true, ...await active.request('version') }); }
       catch (error) { if (error.code !== 'ECONNREFUSED') throw error; }
