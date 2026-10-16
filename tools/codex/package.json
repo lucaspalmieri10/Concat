@@ -1,0 +1,18 @@
+{
+  "name": "concat-codex-local",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local MCP bridge for the Concat desktop editor",
+  "license": "AGPL-3.0-or-later",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.mjs",
+    "status": "node cli.mjs version",
+    "test": "node --test test/*.test.mjs",
+    "smoke": "node smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1"
+  }
+}

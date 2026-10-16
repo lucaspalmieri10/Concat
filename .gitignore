@@ -50,6 +50,13 @@ desktop.ini
 .env
 .env.local
 
+# Local Codex bridge: media, credentials, installers and verification output.
+/.local/
+/materials/
+/projects/
+/exports/
+node_modules/
+
 # An FFmpeg development build unpacked locally for the linked engine
 # (headers + import libraries), pointed at with FFMPEG_DIR. Large and
 # machine-specific.

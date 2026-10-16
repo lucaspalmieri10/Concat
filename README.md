@@ -41,6 +41,9 @@
 
 ## About
 
+**Este fork:** [usar o Concat com Codex no Windows (PT-BR)](tools/codex/README.pt-BR.md).
+Local MCP integration, setup instructions, and a real export verification live in `tools/codex`.
+
 Concat is a free, open-source video editor and a CapCut alternative for macOS, Windows, Linux and Android. It covers what people actually open CapCut for: auto-captions, text-to-speech, background removal, keyframe animation, effects and titles, multi-track cutting, 4K export. With none of the catches: no watermark, no account, no subscription, no upload.
 
 Everything runs locally on a native Rust engine with a GPU compositor. Install it, drop in footage, cut. The AI models for captions, voices and cutout download once from Settings and work offline after that. Your footage never leaves your disk.
